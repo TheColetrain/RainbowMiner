@@ -941,6 +941,20 @@ function Get-ServerConfig {
                             $Preset | Add-Member $_ "`$$_" -Force
                         }
                     }
+
+                    # FIX: restore any field that came from the server as a $Variable placeholder (which
+                    # Get-ConfigContent silently strips to null) back to the client's own $Variable so it
+                    # resolves correctly from the local DefaultValues instead of remaining null.
+                    if ($Session.DefaultValues) {
+                        $Session.DefaultValues.Keys | Where-Object {
+                            $_ -ne "SetupOnly" -and
+                            $Preset.$_ -eq $null -and
+                            $ExcludeConfigVars -inotcontains $_
+                        } | ForEach-Object {
+                            $Preset | Add-Member $_ "`$$_" -Force
+                        }
+                    }
+
                     $Data = $Preset
                 } elseif ($_ -eq "pools") {
                     $Preset = Get-ConfigContent "pools"
